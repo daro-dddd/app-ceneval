@@ -324,12 +324,13 @@ def download_report():
         mimetype='application/pdf'
     )
 
-import smtplib
-from email.message import EmailMessage
+import base64
+import sendgrid
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 
 @app.route('/enviar_correo', methods=['POST'])
 def enviar_correo():
-    """Ruta para enviar los resultados por correo electrónico al usuario."""
+    """Ruta para enviar los resultados por correo electrónico al usuario usando SendGrid."""
     destinatario = session.get('user_email')
     nombre = session.get('user_name', '')
     
@@ -346,53 +347,59 @@ def enviar_correo():
         total = 30
         percentage = (score / total) * 100 if total > 0 else 0
     
-    # Configuracion del servidor de correo
-    correo_remitente = "appceneval@gmail.com" 
-    password_remitente = "ihvvqavmvnekoham"
+    # Configuración de SendGrid a través de variables de entorno (por seguridad)
+    sg_api_key = os.environ.get('SENDGRID_API_KEY')
+    sg_sender = os.environ.get('SENDGRID_SENDER_EMAIL', 'appceneval@gmail.com')
     
-    msg = EmailMessage()
-    msg['Subject'] = 'Tu Reporte de Evaluación CENEVAL'
-    msg['From'] = correo_remitente
-    msg['To'] = f"{destinatario}, georgina_mondragon@my.uvm.edu.mx"
+    if not sg_api_key:
+        print("Falta configurar SENDGRID_API_KEY en Render")
+        return jsonify({"error": "Configuración de correo incompleta en el servidor"}), 500
+        
+    sg = sendgrid.SendGridAPIClient(api_key=sg_api_key)
+    correo_remitente = sg_sender
     
     mensaje_extra = ""
     if session.get('perfect_score'):
-        mensaje_extra = "¡EXCELENTE! ¡Muchas felicidades! Has logrado el 100% perfecto al contestar correctamente desde la pregunta 1 hasta la 12 sin fallar. ¡Un dominio absoluto de los temas!\n"
+        mensaje_extra = "¡EXCELENTE! ¡Muchas felicidades! Has logrado el 100% perfecto al contestar correctamente desde la pregunta 1 hasta la 12 sin fallar. ¡Un dominio absoluto de los temas!<br>"
     else:
-        mensaje_extra = "Sigue practicando para mejorar tu dominio en los diferentes temas.\n"
+        mensaje_extra = "Sigue practicando para mejorar tu dominio en los diferentes temas.<br>"
 
-    cuerpo_correo = f"""Hola {nombre},
+    cuerpo_correo = f"""<p>Hola {nombre},</p>
+    <p>Gracias por completar el Simulador CENEVAL Inteligente.</p>
+    <p>Tus Resultados:<br>
+    Aciertos Totales: {score} / {total}<br>
+    Calificación: {percentage:.1f}%</p>
+    <p>{mensaje_extra}</p>
+    <p>Adjunto encontrarás tu reporte detallado en formato PDF.</p>
+    <p>Saludos,<br>El Agente Tutor Inteligente</p>
+    """
     
-Gracias por completar el Simulador CENEVAL Inteligente.
-
-Tus Resultados:
-Aciertos Totales: {score} / {total}
-Calificación: {percentage:.1f}%
-
-{mensaje_extra}
-Adjunto encontrarás tu reporte detallado en formato PDF.
-
-Saludos,
-El Agente Tutor Inteligente
-"""
-    msg.set_content(cuerpo_correo)
+    message = Mail(
+        from_email=correo_remitente,
+        to_emails=[destinatario, "georgina_mondragon@my.uvm.edu.mx"],
+        subject='Tu Reporte de Evaluación CENEVAL',
+        html_content=cuerpo_correo
+    )
     
     # Adjuntar PDF
     try:
         pdf_bytes = create_pdf_bytes()
-        msg.add_attachment(pdf_bytes, maintype='application', subtype='pdf', filename='Reporte_CENEVAL.pdf')
+        encoded_pdf = base64.b64encode(pdf_bytes).decode()
+        attachment = Attachment(
+            FileContent(encoded_pdf),
+            FileName('Reporte_CENEVAL.pdf'),
+            FileType('application/pdf'),
+            Disposition('attachment')
+        )
+        message.attachment = attachment
     except Exception as e:
         print("Error generando PDF para adjuntar:", e)
     
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(correo_remitente, password_remitente)
-        server.send_message(msg)
-        server.quit()
-        
+        response = sg.send(message)
         return jsonify({"mensaje": "Correo enviado correctamente"})
     except Exception as e:
+        print("Error de SendGrid:", e)
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
