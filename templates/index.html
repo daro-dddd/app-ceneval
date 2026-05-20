@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CENEVAL - Evaluación Inteligente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=1.1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Header -->
+    <header id="app-header" class="hidden">
+        <h1>Evaluación Inteligente</h1>
+        <div class="stats">
+            <span class="stat-badge" id="timer-badge">⏱️ 10s</span>
+            <span class="stat-badge" id="topic-badge">Tema: --</span>
+            <span class="stat-badge" id="diff-badge">Nivel: --</span>
+            <span class="stat-badge" id="progress-badge">Pregunta --/30</span>
+        </div>
+        <!-- Barra de progreso para el temporizador -->
+        <div id="timer-bar-container" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.1);">
+            <div id="timer-bar" style="height: 100%; width: 100%; background: var(--success); transition: width 0.1s linear, background 0.3s;"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="app-main" class="hidden">
+        <div class="question-panel">
+            <div class="context-box" id="context-box">
+                Cargando caso de estudio...
+            </div>
+            <h2 class="question-text" id="question-text">
+                Cargando pregunta...
+            </h2>
+            
+            <div class="options-container" id="options-container" style="display: none;">
+                <!-- Botones generados dinámicamente -->
+            </div>
+
+            <button class="next-btn" id="show-options-btn" onclick="showOptions()" style="display: none; background: linear-gradient(to right, var(--accent), #8b5cf6); padding: 1.2rem 2.5rem; font-size: 1.2rem;">Mostrar Opciones</button>
+
+            <button class="next-btn" id="next-btn" onclick="fetchNextState()">Siguiente Pregunta ➔</button>
+        </div>
+
+        <div class="agent-panel">
+            <div class="agent-avatar">🧠</div>
+            <div class="agent-title">Agente Tutor Inteligente</div>
+            <div class="agent-feedback" id="agent-feedback">
+                Analizando tu desempeño... Selecciona una respuesta para recibir retroalimentación.
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="center-screen">
+        <h2>Simulador CENEVAL Inteligente</h2>
+        <p>Esta plataforma utiliza sistemas basados en el conocimiento, ontologías y agentes inteligentes para adaptar la evaluación a tu nivel de dominio real. Si demuestras conocimiento, avanzarás más rápido.</p>
+        
+        <button class="start-btn" onclick="showRegister()">Comenzar</button>
+    </div>
+
+    <!-- Registration Screen -->
+    <div id="register-screen" class="center-screen hidden">
+        <h2>Ingresa tus datos</h2>
+        <p>Para enviarte tus resultados al finalizar, por favor completa tu información.</p>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); max-width: 400px; width: 100%; margin-bottom: 2rem; text-align: left; display: flex; flex-direction: column; gap: 1rem;">
+            
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Nombre</label>
+                <input type="text" id="reg-nombre" placeholder="Tu nombre" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white; outline: none;">
+            </div>
+            
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Apellido</label>
+                <input type="text" id="reg-apellido" placeholder="Tu apellido" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white; outline: none;">
+            </div>
+            
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem; display: block;">Correo Electrónico</label>
+                <input type="email" id="reg-correo" placeholder="tu_correo@ejemplo.com" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white; outline: none;">
+            </div>
+
+        </div>
+
+        <button class="start-btn" onclick="submitRegisterAndShowRules()">Continuar</button>
+        <p id="reg-error" style="color: var(--error); margin-top: 1rem; display: none;">Por favor, ingresa al menos tu correo.</p>
+    </div>
+
+    <!-- Rules Screen -->
+    <div id="rules-screen" class="center-screen hidden">
+        <h2>📜 Reglas de la Evaluación</h2>
+        <div style="text-align: left; max-width: 600px; margin-bottom: 2.5rem; background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
+            <ul style="list-style-position: inside; color: var(--text-muted); line-height: 1.8; font-size: 1.05rem;">
+                <li>⏱️ <strong>Tienes 10 segundos</strong> como máximo para responder cada pregunta una vez que reveles las opciones.</li>
+                <li>🏆 <strong>Dominio Total:</strong> Si contestas <strong>las primeras 12 preguntas de manera correcta</strong> (sin ningún error), el examen terminará inmediatamente con 100% de calificación.</li>
+                <li>📧 <strong>Envío de Resultados:</strong> Al finalizar, tu reporte de evaluación será enviado al correo que proporcionaste.</li>
+                <li>📊 Recibirás un diagnóstico detallado y un reporte en PDF.</li>
+            </ul>
+        </div>
+        <button class="start-btn" onclick="startExam()">Comenzar Evaluación Ahora</button>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="center-screen hidden">
+        <h2>Evaluación Completada</h2>
+        <p id="final-diagnosis">Generando diagnóstico...</p>
+        
+        <div class="results-grid">
+            <div class="result-card">
+                <h3>Aciertos Totales</h3>
+                <p id="final-score">-- / --</p>
+            </div>
+            <div class="result-card">
+                <h3>Porcentaje</h3>
+                <p id="final-percentage">--%</p>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem; display: flex; justify-content: center;">
+            <button class="start-btn" style="background: linear-gradient(to right, var(--accent), #8b5cf6);" onclick="location.reload()">Reiniciar Evaluación</button>
+        </div>
+        
+        <p id="email-status" style="margin-top: 1.5rem; font-size: 1rem; color: var(--success); display: none;"></p>
+    </div>
+
+</div>
+
+<script>
+    let answered = false;
+    let timerInterval = null;
+    let timeLeft = 10.0;
+    let startTime = 0;
+    let userEmail = "";
+
+    function showRegister() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('register-screen').classList.remove('hidden');
+    }
+
+    async function submitRegisterAndShowRules() {
+        const nombre = document.getElementById('reg-nombre').value.trim();
+        const apellido = document.getElementById('reg-apellido').value.trim();
+        const correo = document.getElementById('reg-correo').value.trim();
+        const errorMsg = document.getElementById('reg-error');
+
+        if (!correo) {
+            errorMsg.style.display = 'block';
+            return;
+        }
+        
+        userEmail = correo;
+        errorMsg.style.display = 'none';
+
+        // Enviar datos al backend
+        try {
+            await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: nombre, apellido: apellido, correo: correo })
+            });
+        } catch (e) {
+            console.error("Error al registrar:", e);
+        }
+
+        document.getElementById('register-screen').classList.add('hidden');
+        document.getElementById('rules-screen').classList.remove('hidden');
+    }
+
+    function startExam() {
+        document.getElementById('rules-screen').classList.add('hidden');
+        document.getElementById('app-header').classList.remove('hidden');
+        document.getElementById('app-main').classList.remove('hidden');
+        
+        fetchNextState();
+    }
+
+    function showOptions() {
+        document.getElementById('show-options-btn').style.display = 'none';
+        document.getElementById('options-container').style.display = 'grid'; // Mantiene el estilo original
+        document.getElementById('options-container').style.display = '';
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 10.0;
+        startTime = Date.now();
+        document.getElementById('timer-badge').innerText = `⏱️ 10.0s`;
+        const bar = document.getElementById('timer-bar');
+        bar.style.width = '100%';
+        bar.style.background = 'var(--success)';
+
+        timerInterval = setInterval(() => {
+            if (answered) {
+                clearInterval(timerInterval);
+                return;
+            }
+
+            let elapsed = (Date.now() - startTime) / 1000;
+            timeLeft = Math.max(0, 10.0 - elapsed);
+            
+            document.getElementById('timer-badge').innerText = `⏱️ ${timeLeft.toFixed(1)}s`;
+            let percentage = (timeLeft / 10.0) * 100;
+            bar.style.width = `${percentage}%`;
+
+            if (timeLeft <= 3) {
+                bar.style.background = 'var(--error)'; // Cambiar a rojo en los últimos 3 segundos
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleTimeOut();
+            }
+        }, 100); // Actualiza cada 100ms para que la barra se vea fluida
+    }
+
+    async function handleTimeOut() {
+        if (answered) return;
+        answered = true;
+        
+        // Deshabilita los botones
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(b => {
+            b.disabled = true;
+            b.style.opacity = '0.5';
+        });
+
+        document.getElementById('agent-feedback').innerText = "⏳ Tiempo agotado. Evaluando como incorrecta...";
+        
+        try {
+            // Mandamos -1 como ID para indicar tiempo agotado
+            const response = await fetch('/submit_answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ option_id: -1, time_taken: 10.0 })
+            });
+            const result = await response.json();
+
+            document.getElementById('agent-feedback').innerText = result.feedback;
+            document.getElementById('next-btn').style.display = 'block';
+            
+            if (result.action === "finished") {
+                document.getElementById('next-btn').innerText = "Ver Resultados ➔";
+            } else {
+                document.getElementById('next-btn').innerText = "Siguiente Pregunta ➔";
+            }
+
+        } catch (error) {
+            console.error("Error submitting timeout:", error);
+        }
+    }
+
+    async function fetchNextState() {
+        answered = false;
+        clearInterval(timerInterval);
+        document.getElementById('timer-badge').innerText = `⏱️ --s`;
+        document.getElementById('timer-bar').style.width = '100%';
+        
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('show-options-btn').style.display = 'none';
+        document.getElementById('agent-feedback').innerText = "Analizando tu desempeño... Selecciona una respuesta para recibir retroalimentación adaptativa.";
+        
+        try {
+            const response = await fetch('/get_state');
+            const data = await response.json();
+
+            if (data.status === "finished") {
+                showResults(data);
+                return;
+            }
+
+            // Actualiza las estadísticas del encabezado
+            document.getElementById('topic-badge').innerText = `Tema: ${data.topic}`;
+            document.getElementById('diff-badge').innerText = `Nivel: ${data.difficulty}`;
+            document.getElementById('progress-badge').innerText = `Pregunta ${data.question_number}/30`;
+
+            // Actualiza el panel de la pregunta
+            document.getElementById('context-box').innerText = data.question.context;
+            document.getElementById('question-text').innerText = data.question.text;
+
+            // Renderiza las opciones
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            data.question.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => submitAnswer(opt.id, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Mostramos el botón para revelar las opciones y no iniciamos el timer aún.
+            document.getElementById('options-container').style.display = 'none';
+            document.getElementById('show-options-btn').style.display = 'block';
+
+        } catch (error) {
+            console.error("Error fetching state:", error);
+            document.getElementById('agent-feedback').innerText = "Error de conexión con el motor de inferencia.";
+        }
+    }
+
+    async function submitAnswer(optionId, btnElement) {
+        if (answered) return;
+        answered = true;
+        clearInterval(timerInterval);
+
+        let timeTaken = (Date.now() - startTime) / 1000;
+
+        // Desactiva todos los botones
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(b => {
+            b.disabled = true;
+            if (b !== btnElement) {
+                b.style.opacity = '0.5';
+            }
+        });
+
+        // Enviar respuesta al agente tutor
+        try {
+            const response = await fetch('/submit_answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ option_id: optionId, time_taken: timeTaken })
+            });
+            const result = await response.json();
+
+            // Colorea el botón dependiendo de si es correcto o no
+            if (result.is_correct) {
+                btnElement.classList.add('correct');
+            } else {
+                btnElement.classList.add('incorrect');
+            }
+
+            // Muestra la retroalimentación del agente
+            document.getElementById('agent-feedback').innerText = result.feedback;
+
+            // Muestra el botón de siguiente
+            document.getElementById('next-btn').style.display = 'block';
+            
+            if (result.action === "finished") {
+                document.getElementById('next-btn').innerText = "Ver Resultados ➔";
+            } else {
+                document.getElementById('next-btn').innerText = "Siguiente Pregunta ➔";
+            }
+
+        } catch (error) {
+            console.error("Error submitting answer:", error);
+        }
+    }
+
+    function showResults(data) {
+        document.getElementById('app-header').classList.add('hidden');
+        document.getElementById('app-main').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+
+        document.getElementById('final-diagnosis').innerText = data.diagnosis;
+        document.getElementById('final-score').innerText = `${data.score} / ${data.total_questions}`;
+        
+        let percentage = (data.score / data.total_questions) * 100;
+        document.getElementById('final-percentage').innerText = `${percentage.toFixed(1)}%`;
+        
+        if (userEmail) {
+            sendEmailAutomatically();
+        }
+    }
+
+    async function sendEmailAutomatically() {
+        const statusText = document.getElementById('email-status');
+        statusText.style.display = 'block';
+        statusText.style.color = 'var(--text-muted)';
+        statusText.innerText = 'Enviando resultados por correo...';
+
+        try {
+            const response = await fetch('/enviar_correo', {
+                method: 'POST'
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                statusText.style.color = 'var(--success)';
+                statusText.innerText = '¡Tus resultados han sido enviados correctamente!';
+            } else {
+                statusText.style.color = 'var(--error)';
+                statusText.innerText = 'Error al enviar correo: ' + result.error;
+            }
+        } catch (error) {
+            statusText.style.color = 'var(--error)';
+            statusText.innerText = 'Error de conexión al intentar enviar el correo.';
+        }
+    }
+</script>
+
+<style>
+    @keyframes scaleUp {
+        0% { transform: scale(0.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+</body>
+</html>
