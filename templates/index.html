@@ -97,7 +97,7 @@
             <ul style="list-style-position: inside; color: var(--text-muted); line-height: 1.8; font-size: 1.05rem;">
                 <li>⏱️ <strong>Tienes 10 segundos</strong> como máximo para responder cada pregunta una vez que reveles las opciones.</li>
                 <li>🏆 <strong>Dominio Total:</strong> Si contestas <strong>las primeras 12 preguntas de manera correcta</strong> (sin ningún error), el examen terminará inmediatamente con 100% de calificación.</li>
-                <li>📧 <strong>Envío de Resultados:</strong> Al finalizar, tu reporte de evaluación será enviado al correo que proporcionaste.</li>
+                <li>📧 <strong>Envío de Resultados:</strong> Al finalizar, tu reporte de evaluación será enviado al correo que proporcionaste <strong>(por favor, revisa tu carpeta de Spam o Correo no deseado)</strong>.</li>
                 <li>📊 Recibirás un diagnóstico detallado y un reporte en PDF.</li>
             </ul>
         </div>
@@ -383,7 +383,7 @@
 
             if (response.ok) {
                 statusText.style.color = 'var(--success)';
-                statusText.innerText = '¡Tus resultados han sido enviados correctamente!';
+                statusText.innerText = '¡Tus resultados han sido enviados correctamente! (Revisa tu carpeta de Spam si no lo ves)';
             } else {
                 statusText.style.color = 'var(--error)';
                 statusText.innerText = 'Error al enviar correo: ' + result.error;
